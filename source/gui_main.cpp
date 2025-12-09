@@ -8,12 +8,12 @@ static char pathBuffer[FS_MAX_PATH];
 
 constexpr const char* const descriptions[2][2] = {
     [0] = {
-        [0] = "Off",
-        [1] = "Off",
+        [0] = "未运行",
+        [1] = "未运行",
     },
     [1] = {
-        [0] = "On",
-        [1] = "On",
+        [0] = "运行中",
+        [1] = "运行中",
     },
 };
 
@@ -23,7 +23,7 @@ static char fileBuffer[4096];
 GuiMain::GuiMain() {
     // Pre-allocate vector for typical number of modules (avoids reallocations)
     m_sysmoduleListItems.reserve(32);
-    
+
     DIR* dir = opendir(amsContentsPath);
     if (!dir)
         return;
@@ -49,7 +49,7 @@ GuiMain::GuiMain() {
 
         // Build toolbox.json path
         std::snprintf(pathBuffer, FS_MAX_PATH, "/atmosphere/contents/%s/toolbox.json", entry->d_name);
-        
+
         // Use FILE* for file reading
         FILE* fp = std::fopen(pathBuffer, "rb");
         if (!fp)
@@ -67,7 +67,7 @@ GuiMain::GuiMain() {
         // Read directly into static buffer - no allocation
         const size_t bytesRead = std::fread(fileBuffer, 1, size, fp);
         std::fclose(fp);
-        
+
         if (bytesRead != static_cast<size_t>(size))
             continue;
 
@@ -110,7 +110,7 @@ GuiMain::GuiMain() {
 
         // Build list item text efficiently - assign directly without clearing
         listItemText.assign(nameItem->valuestring);
-        
+
         cJSON* versionItem = cJSON_GetObjectItem(toolboxFileContent, "version");
         if (versionItem && cJSON_IsString(versionItem)) {
             listItemText += "";
@@ -133,7 +133,7 @@ GuiMain::GuiMain() {
 
         // Pre-build and cache the flag path
         std::snprintf(module.flagPath, FS_MAX_PATH, boot2FlagFormat, module.programId);
-        
+
         // Pre-build and cache the folder path
         std::snprintf(module.folderPath, FS_MAX_PATH, boot2FlagFolder, module.programId);
 
@@ -141,7 +141,7 @@ GuiMain::GuiMain() {
             if (module.needReboot) {
                 module.listItem->isLocked = true;
             }
-            
+
             if (click & KEY_A && !module.needReboot) {
                 if (this->isRunning(module)) {
                     /* Kill process. */
@@ -166,7 +166,7 @@ GuiMain::GuiMain() {
                 } else {
                     /* Create flags directory if needed (cached path). */
                     mkdir(module.folderPath, 0777);
-                    
+
                     /* Create boot2 flag file. */
                     FILE* flagFile = std::fopen(module.flagPath, "wb");
                     if (flagFile)
@@ -196,7 +196,7 @@ GuiMain::GuiMain() {
 GuiMain::~GuiMain() {
     // Signal that we're shutting down to skip any pending updates
     m_isActive = false;
-    
+
     // Fast cleanup - vector destructor handles the rest
     //m_sysmoduleListItems.clear();
 }
@@ -207,20 +207,20 @@ inline void drawMemoryWidget(auto renderer) {
     static tsl::Color ramColor = {0,0,0,0};
     static u64 lastUpdateTick = 0;
     const u64 ticksPerSecond = armGetSystemTickFreq();
-    
+
     const u64 currentTick = armGetSystemTick();
-    
+
     // Update every second
     if (lastUpdateTick == 0 || currentTick - lastUpdateTick >= ticksPerSecond) {
         u64 RAM_Used_system_u, RAM_Total_system_u;
         svcGetSystemInfo(&RAM_Used_system_u, 1, INVALID_HANDLE, 2);
         svcGetSystemInfo(&RAM_Total_system_u, 0, INVALID_HANDLE, 2);
-        
+
         const u64 freeRamBytes = RAM_Total_system_u - RAM_Used_system_u;
-        
+
         float value;
         const char* unit;
-        
+
         if (freeRamBytes >= 1024ULL * 1024 * 1024) {
             value = static_cast<float>(freeRamBytes) / (1024.0f * 1024.0f * 1024.0f);
             unit = "GB";
@@ -228,7 +228,7 @@ inline void drawMemoryWidget(auto renderer) {
             value = static_cast<float>(freeRamBytes) / (1024.0f * 1024.0f);
             unit = "MB";
         }
-        
+
         int decimalPlaces;
         if (value >= 1000.0f) {
             decimalPlaces = 0;
@@ -239,11 +239,11 @@ inline void drawMemoryWidget(auto renderer) {
         } else {
             decimalPlaces = 3;
         }
-        
+
         std::snprintf(ramString, sizeof(ramString), "%.*f %s %s", decimalPlaces, value, unit, ult::FREE.c_str());
-        
+
         const float freeRamMB = static_cast<float>(freeRamBytes) / (1024.0f * 1024.0f);
-        
+
         if (freeRamMB >= 9.0f){
             ramColor = tsl::healthyRamTextColor;
         } else if (freeRamMB >= 3.0f) {
@@ -251,22 +251,22 @@ inline void drawMemoryWidget(auto renderer) {
         } else {
             ramColor = tsl::badRamTextColor;
         }
-        
+
         lastUpdateTick = currentTick;
     }
-    
+
     renderer->drawRect(239, 15, 1, 66, renderer->aWithOpacity(tsl::separatorColor));
-    
+
     if (!ult::hideWidgetBackdrop) {
         renderer->drawUniformRoundedRect(247, 15, (ult::extendedWidgetBackdrop) ? tsl::cfg::FramebufferWidth - 255 : tsl::cfg::FramebufferWidth - 255 + 40, 66, renderer->a(tsl::widgetBackdropColor));
     }
-    
+
     const int backdropCenterX = 247 + ((tsl::cfg::FramebufferWidth - 255) >> 1);
-    
+
     // First line: "System" label
     size_t y_offset = 44 + 2 - 1;  // Same as the clock y_offset in the reference code
     const char* systemLabel = ult::SYSTEM_RAM.c_str();
-    
+
     if (ult::centerWidgetAlignment) {
         const int labelWidth = renderer->getTextDimensions(systemLabel, false, 20).first;
         renderer->drawString(systemLabel, false, backdropCenterX - (labelWidth >> 1), y_offset, 20, tsl::headerTextColor);
@@ -274,10 +274,10 @@ inline void drawMemoryWidget(auto renderer) {
         const int labelWidth = renderer->getTextDimensions(systemLabel, false, 20).first;
         renderer->drawString(systemLabel, false, tsl::cfg::FramebufferWidth - labelWidth - 25, y_offset, 20, tsl::headerTextColor);
     }
-    
+
     // Second line: RAM info
     y_offset += 22;  // Same spacing as in the reference code
-    
+
     if (ult::centerWidgetAlignment) {
         const int ramWidth = renderer->getTextDimensions(ramString, false, 20).first;
         const int currentX = backdropCenterX - (ramWidth >> 1);
@@ -298,7 +298,7 @@ tsl::elm::Element* GuiMain::createUI() {
     }));
 
     if (this->m_sysmoduleListItems.size() == 0) {
-        const char* description = this->m_scanned ? "No sysmodules found!" : "Scan failed!";
+        const char* description = this->m_scanned ? "没有发现系统插件!" : "扫描插件失败!";
 
         auto* warning = new tsl::elm::CustomDrawer([description](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
             renderer->drawString("\uE150", false, 180, 250, 90, tsl::headerTextColor);
@@ -309,18 +309,18 @@ tsl::elm::Element* GuiMain::createUI() {
     } else {
         tsl::elm::List* sysmoduleList = new tsl::elm::List();
 
-        sysmoduleList->addItem(new tsl::elm::CategoryHeader("Dynamic   Auto Start   Toggle", true));
+        sysmoduleList->addItem(new tsl::elm::CategoryHeader("动态插件   自启动   开关", true));
         sysmoduleList->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-            renderer->drawString(" These sysmodules can be toggled at any time.", false, x + 5, y + 13, 15, tsl::warningTextColor);
+            renderer->drawString(" 修改动态插件可以即时生效", false, x + 5, y + 13, 15, tsl::warningTextColor);
         }), 30);
         for (const auto& module : this->m_sysmoduleListItems) {
             if (!module.needReboot)
                 sysmoduleList->addItem(module.listItem);
         }
 
-        sysmoduleList->addItem(new tsl::elm::CategoryHeader("Static   Auto Start", true));
+        sysmoduleList->addItem(new tsl::elm::CategoryHeader("静态插件   自启动", true));
         sysmoduleList->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-            renderer->drawString(" These sysmodules need a reboot to work.", false, x + 5, y + 13, 15, tsl::warningTextColor);
+            renderer->drawString(" 修改静态插件需要重启系统才能生效.", false, x + 5, y + 13, 15, tsl::warningTextColor);
         }), 30);
         for (const auto& module : this->m_sysmoduleListItems) {
             if (module.needReboot) {
@@ -338,7 +338,7 @@ void GuiMain::update() {
     // Early exit if shutting down - avoids unnecessary work during cleanup
     if (!m_isActive)
         return;
-        
+
     static u32 counter = 0;
 
     // Check every 30 frames (~0.5 seconds at 60fps)
@@ -360,7 +360,7 @@ bool GuiMain::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touch
 
 void GuiMain::toggleTitleIdDisplay() {
     m_showTitleIds = !m_showTitleIds;
-    
+
     // Update all list items with either title ID or display name
     for (auto& module : this->m_sysmoduleListItems) {
         if (m_showTitleIds) {
@@ -369,7 +369,7 @@ void GuiMain::toggleTitleIdDisplay() {
             module.listItem->setText(module.displayName);
         }
     }
-    
+
     // Trigger feedback
     triggerRumbleClick.store(true, std::memory_order_release);
     triggerSettingsSound.store(true, std::memory_order_release);
