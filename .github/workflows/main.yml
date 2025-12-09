@@ -11,22 +11,39 @@ jobs:
     container: devkitpro/devkita64:latest
 
     steps:
-    - name: Checkout latest code
-      uses: actions/checkout@v4.2.2
-      with:
-        ref: master
-        clean: true
-        fetch-depth: 0
-        fetch-tags: true
-        submodules: recursive
+      - name: Checkout latest code
+        uses: actions/checkout@v4.2.2
+        with:
+          ref: master
+          clean: true
+          fetch-depth: 0
+          fetch-tags: true
+          submodules: recursive
 
-    - name: Build
-      run: |
-        export DEVKITPRO=/opt/devkitpro
-        make all
-      shell: bash
+      - name: Setup ENV parameters
+        run: |
+          VER_FILE=Makefile
+          NAME=$(awk '/^APP_TITLE/{print $3}' $VER_FILE)
+          VERSION=$(awk '/^APP_VERSION/{print $3}' $VER_FILE)
+          echo "TAG=${VERSION}" >> "${GITHUB_ENV}"
+          echo "APP_NAME=${NAME}" >> "${GITHUB_ENV}"
+          echo "RELEASE_NAME=${NAME} ${VERSION}" >> "${GITHUB_ENV}"
+        shell: bash
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        path: ovlSysmodules.ovl
+      - name: Build
+        run: |
+          export DEVKITPRO=/opt/devkitpro
+          make all
+        shell: bash
+
+      - name: Upload artifacts
+        uses: softprops/action-gh-release@v2.0.9
+        with:
+          name: ${{ env.RELEASE_NAME }}
+          tag_name: ${{ env.TAG }}
+          draft: false
+          prerelease: false
+          generate_release_notes: yes
+          make_latest: true
+          files: |
+            ovlSysmodules.ovl
