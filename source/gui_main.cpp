@@ -291,14 +291,14 @@ inline void drawMemoryWidget(auto renderer) {
 tsl::elm::Element* GuiMain::createUI() {
     auto* rootFrame = new tsl::elm::HeaderOverlayFrame(97);
     rootFrame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("Sysmodules", false, 20, 52, 32, tsl::defaultOverlayColor);
+        renderer->drawString("后台管理", false, 20, 52, 32, tsl::defaultOverlayColor);
         renderer->drawString(VERSION, false, 20, 75, 15, tsl::bannerVersionTextColor);
 
         drawMemoryWidget(renderer);
     }));
 
     if (this->m_sysmoduleListItems.size() == 0) {
-        const char* description = this->m_scanned ? "没有发现系统插件!" : "扫描插件失败!";
+        const char* description = this->m_scanned ? "没有发现后台插件!" : "扫描后台插件失败!";
 
         auto* warning = new tsl::elm::CustomDrawer([description](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
             renderer->drawString("\uE150", false, 180, 250, 90, tsl::headerTextColor);
