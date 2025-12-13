@@ -355,6 +355,19 @@ bool GuiMain::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touch
         toggleTitleIdDisplay();
         return true;
     }
+
+    // Side-note: Not sure why it is needed, but for some reason the Overlay handleInput is being canabolized. Added to ensnsure behavior.
+    // Navigational boundary cases for handling wrapping
+    static bool lastDirectionPressed = true;
+    const bool directionPressed = ((keysHeld & KEY_UP) || (keysHeld & KEY_DOWN) || (keysHeld & KEY_LEFT) || (keysHeld & KEY_RIGHT));
+
+    if (!directionPressed && lastDirectionPressed)
+        tsl::elm::s_directionalKeyReleased.store(true, std::memory_order_release);
+    else if (directionPressed && lastDirectionPressed)
+        tsl::elm::s_directionalKeyReleased.store(false, std::memory_order_release);
+
+    lastDirectionPressed = directionPressed;
+
     return false;
 }
 
